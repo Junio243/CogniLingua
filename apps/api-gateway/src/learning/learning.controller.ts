@@ -6,9 +6,12 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { LessonCompletedWebhookDto } from './dto/lesson-completed-webhook.dto';
+import { LearningService } from './learning.service';
 
 @Controller('learning')
 export class LearningController {
+  constructor(private readonly learningService: LearningService) {}
+
   // 👉 Endpoint acessável pelo navegador (GET)
   @Get('status')
   getStatus() {
@@ -39,9 +42,6 @@ export class LearningController {
       `timestamp=${payload.timestamp}`,
     );
 
-    return {
-      success: true,
-      message: 'Lesson completion recebida e processada (stub).',
-    };
+    return this.learningService.forwardLessonCompleted(payload);
   }
 }
