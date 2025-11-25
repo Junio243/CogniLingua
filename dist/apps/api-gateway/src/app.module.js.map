@@ -1,0 +1,1 @@
+{"version":3,"file":"app.module.js","sourceRoot":"","sources":["../../../../apps/api-gateway/src/app.module.ts"],"names":[],"mappings":";;;;;;;;;AAAA,2CAAwC;AACxC,wEAAoE;AAO7D,IAAM,SAAS,GAAf,MAAM,SAAS;CAAG,CAAA;AAAZ,8BAAS;oBAAT,SAAS;IALrB,IAAA,eAAM,EAAC;QACN,OAAO,EAAE,EAAE;QACX,WAAW,EAAE,CAAC,wCAAkB,CAAC;QACjC,SAAS,EAAE,EAAE;KACd,CAAC;GACW,SAAS,CAAG"}

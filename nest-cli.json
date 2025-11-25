@@ -1,0 +1,50 @@
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/api-gateway/src",
+  "compilerOptions": {
+    "webpack": true,
+    "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
+  },
+  "projects": {
+    "api-gateway": {
+      "type": "application",
+      "root": "apps/api-gateway",
+      "entryFile": "main",
+      "sourceRoot": "apps/api-gateway/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
+      }
+    },
+    "student-profiler": {
+      "type": "application",
+      "root": "apps/student-profiler",
+      "entryFile": "main",
+      "sourceRoot": "apps/student-profiler/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/student-profiler/tsconfig.app.json"
+      }
+    },
+    "content-brain": {
+      "type": "application",
+      "root": "apps/content-brain",
+      "entryFile": "main",
+      "sourceRoot": "apps/content-brain/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/content-brain/tsconfig.app.json"
+      }
+    },
+    "shared": {
+      "type": "library",
+      "root": "libs/shared",
+      "entryFile": "index",
+      "sourceRoot": "libs/shared/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/shared/tsconfig.lib.json"
+      }
+    }
+  },
+  "compilerOptions": {
+    "assets": ["**/*.cypher"],
+    "watchAssets": true
+  }
+}
