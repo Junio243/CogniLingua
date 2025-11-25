@@ -103,19 +103,31 @@ Implementa o algoritmo **Bayesian Knowledge Tracing (BKT)**.
 
 ### 6. `apps/api-gateway/src/learning/learning.controller.ts`
 
-Controlador REST que lida com webhooks de eventos de aprendizado (ex: `/webhook/lesson-complete`).
-1.  Valida o payload recebido via POST.
-2.  Prepara uma mensagem de evento de interação (`InteractionEvent`).
-3.  Usa um cliente gRPC para chamar o serviço `recalculateMetrics` no microsserviço `student-profiler`.
-4.  Retorna uma resposta indicando sucesso ou falha na chamada do serviço.
+Controlador REST que lida com webhooks e orquestração básica do conteúdo:
+1.  **`GET /learning/status`**: verificação rápida de saúde do gateway.
+2.  **`GET /learning/modules`**: expõe a sequência de módulos básicos com objetivos, pré-requisitos e critérios de conclusão.
+3.  **`POST /learning/next-item`**: recebe o progresso do aluno (IDs de vocabulário já estudados, acurácia e exercícios concluídos) e devolve o próximo item do módulo corrente, além do progresso calculado e da sugestão do próximo módulo.
+4.  **`POST /learning/lesson-completed`**: webhook (stub) para registrar lições concluídas.
 
-### 7. `docker-compose.yml`
+ ### 7. `docker-compose.yml`
 
-Define e configura os serviços de infraestrutura necessários para execução local:
-*   **`postgres`**: Instância do PostgreSQL com variáveis de ambiente para banco, usuário e senha.
-*   **`neo4j`**: Instância do Neo4j com autenticação padrão (alterar para produção). Expõe as portas Bolt e HTTP.
-*   **`redis`**: Instância do Redis para cache e filas, com persistência AOF ativada.
-Todos os serviços estão em uma rede Docker isolada (`cognilingua_network`) e utilizam volumes nomeados para persistência de dados.
+ Define e configura os serviços de infraestrutura necessários para execução local:
+ *   **`postgres`**: Instância do PostgreSQL com variáveis de ambiente para banco, usuário e senha.
+ *   **`neo4j`**: Instância do Neo4j com autenticação padrão (alterar para produção). Expõe as portas Bolt e HTTP.
+ *   **`redis`**: Instância do Redis para cache e filas, com persistência AOF ativada.
+ Todos os serviços estão em uma rede Docker isolada (`cognilingua_network`) e utilizam volumes nomeados para persistência de dados.
+
+## Sequência de módulos básicos e vocabulário seed
+
+O arquivo `seed.neo4j.cypher` (copiado também para `docs/neo4j-schema.cypher`) agora cria uma trilha de módulos sequenciais focados em vocabulário do dia a dia para iniciantes:
+
+| Módulo | Objetivos principais | Critério de conclusão (todos devem ser atendidos) | Exemplos de vocabulário |
+| --- | --- | --- | --- |
+| **Básico 1 - Saudações e Apresentações** | Cumprimentar, despedir-se, fazer perguntas pessoais e se apresentar. | ≥80% de acerto, ≥8 exercícios, ≥6 itens de vocabulário praticados. | _hola_, _buenos días_, _¿cómo estás?_, _me llamo…_ |
+| **Básico 2 - Rotina e Números** | Descrever rotina, falar de horários e contar. | ≥80% de acerto, ≥10 exercícios, ≥7 itens praticados. | _uno_, _diez_, _voy al trabajo_, _tomo café por la mañana_ |
+| **Básico 3 - Compras e Deslocamentos** | Comprar, pedir ajuda e dar/receber direções. | ≥80% de acerto, ≥12 exercícios, ≥8 itens praticados. | _¿cuánto cuesta?_, _la cuenta, por favor_, _¿dónde está el baño?_ |
+
+Cada módulo tem pré-requisito explícito (`basico-2` depende de `basico-1`, etc.) e relacionamentos `[:CONTAINS]` com itens de vocabulário etiquetados por tema/nível para futuras consultas no Neo4j.
 
 ## Como Executar
 
