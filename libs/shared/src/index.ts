@@ -17,3 +17,5 @@ export interface StudentProfile {
   studentId: string;
   cognitiveState: CognitiveState[];
 }
+
+export * from './curriculum/modules';

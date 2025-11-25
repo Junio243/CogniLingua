@@ -1,3 +1,4 @@
+```markdown
 # CogniLingua - Ecossistema de Aprendizado Adaptativo Baseado em Agentes
 
 Este repositório contém a estrutura inicial e os componentes principais para o projeto **CogniLingua**, um ecossistema de aprendizado adaptativo baseado em agentes, projetado para personalizar a experiência de aprendizado de idiomas (inicialmente espanhol) com base no estado cognitivo e no histórico de interações do aluno.
@@ -103,7 +104,7 @@ Implementa o algoritmo **Bayesian Knowledge Tracing (BKT)**.
 
 ### 6. `apps/api-gateway/src/learning/learning.controller.ts`
 
-Controlador REST que lida com webhooks de eventos de aprendizado (ex: `/webhook/lesson-complete`).
+Controlador REST que lida com webhooks de eventos de aprendizado (ex: `/learning/lesson-completed`).
 1.  Valida o payload recebido via POST.
 2.  Prepara uma mensagem de evento de interação (`InteractionEvent`).
 3.  Usa um cliente gRPC para chamar o serviço `recalculateMetrics` no microsserviço `student-profiler`.
@@ -212,3 +213,4 @@ Variáveis requeridas:
     npm run start -- --project content-brain
     ```
     *Ou use um gerenciador de processos como `concurrently` para rodar todos de uma vez.*
+```

@@ -6,6 +6,6 @@ import { SpanishController } from './spanish/spanish.controller';
 @Module({
   imports: [],
   controllers: [LearningController, CurriculumController, SpanishController],
-  providers: [],
+  providers: [], // O serviço LearningService foi removido, pois não é mais necessário na nova estrutura.
 })
 export class AppModule {}

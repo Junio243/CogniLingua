@@ -1,4 +1,8 @@
+node_modules/
 node_modules
+dist/
+coverage/
+*.log
 .next
 .yarn
 .pnp.cjs
