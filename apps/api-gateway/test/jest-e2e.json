@@ -1,0 +1,12 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "../../../",
+  "testEnvironment": "node",
+  "testMatch": ["<rootDir>/apps/api-gateway/test/**/*.e2e-spec.ts"],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@cognilingua/shared(|/.*)$": "<rootDir>/libs/shared/src/$1"
+  }
+}

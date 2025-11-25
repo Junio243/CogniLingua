@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Post,
+  Logger,
   ValidationPipe,
 } from '@nestjs/common';
 import {
@@ -14,18 +15,15 @@ import {
 } from '@nestjs/swagger';
 import { CurriculumNextDto } from './dto/curriculum-next.dto';
 import { LessonCompletedWebhookDto } from './dto/lesson-completed-webhook.dto';
-import { NextItemRequestDto } from './dto/next-item-request.dto'; // Importa DTO da primeira versão
-import { SpanishCardsDto } from './dto/spanish-cards.dto'; // Importa DTO da segunda versão
-// O LearningService não é mais injetado, pois sua lógica foi movida ou substituída
-// import { LearningService } from './learning.service';
+import { NextItemRequestDto } from './dto/next-item-request.dto';
+import { SpanishCardsDto } from './dto/spanish-cards.dto';
 
 @ApiTags('Learning')
 @Controller('learning')
 export class LearningController {
-  // O construtor foi removido, pois LearningService não é mais usado aqui
-  // constructor(private readonly learningService: LearningService) {}
+  private readonly logger = new Logger(LearningController.name);
 
-  // 👉 Endpoint acessável pelo navegador (GET)
+  // 👉 Endpoint acessível pelo navegador (GET)
   @Get('status')
   @ApiOperation({ summary: 'Health-check do gateway' })
   @ApiOkResponse({
@@ -128,19 +126,29 @@ export class LearningController {
       example: {
         success: true,
         message: 'Lesson completion recebida e processada (stub).',
+        processedAt: '2024-06-30T12:00:00.000Z',
       },
     },
   })
   async handleLessonCompletedWebhook(
     @Body(new ValidationPipe({ transform: true }))
     payload: LessonCompletedWebhookDto,
-  ): Promise<{ message: string; processedAt: string }> {
+  ): Promise<{ success: boolean; message: string; processedAt: string }> {
+    this.logger.log(
+      {
+        studentId: payload.studentId,
+        lessonId: payload.lessonId,
+        score: payload.score,
+        timestamp: payload.timestamp,
+      },
+      '✅ Lesson completed webhook recebido',
+    );
+
     // Aqui, o controlador deve chamar o microsserviço student-profiler via gRPC
-    // Exemplo (stub):
-    console.log('Recebido webhook:', payload);
-    // clientGrpcStudentProfiler.recalculateMetrics(payload); // Chamada real via gRPC
+    // clientGrpcStudentProfiler.recalculateMetrics(payload);
 
     return {
+      success: true,
       message: 'Lesson completion recebida e processada (stub).',
       processedAt: new Date().toISOString(),
     };
