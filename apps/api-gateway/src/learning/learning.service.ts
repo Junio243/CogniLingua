@@ -4,8 +4,8 @@ import { LessonCompletedWebhookDto } from './dto/lesson-completed-webhook.dto';
 @Injectable()
 export class LearningService {
   /**
-   * Encaminha o webhook para o backend (simulação de chamada gRPC).
-   * Em um ambiente real, aqui faríamos a chamada gRPC para o serviço responsável.
+   * Método mantido apenas para compatibilidade com testes.
+   * TODO: Remover após atualizar os testes para usar a nova arquitetura.
    */
   async forwardLessonCompleted(
     payload: LessonCompletedWebhookDto,

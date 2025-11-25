@@ -2,4 +2,9 @@ node_modules/
 dist/
 coverage/
 .DS_Store
-npm-debug.log*
+*.log
+.next
+.yarn
+.pnp.cjs
+.pnp.loader.mjs
+yarn.lock

@@ -1,3 +1,4 @@
+```markdown
 # CogniLingua - Ecossistema de Aprendizado Adaptativo Baseado em Agentes
 
 Este repositório contém a estrutura inicial e os componentes principais para o projeto **CogniLingua**, um ecossistema de aprendizado adaptativo baseado em agentes, projetado para personalizar a experiência de aprendizado de idiomas (inicialmente espanhol) com base no estado cognitivo e no histórico de interações do aluno.
@@ -103,25 +104,95 @@ Implementa o algoritmo **Bayesian Knowledge Tracing (BKT)**.
 
 ### 6. `apps/api-gateway/src/learning/learning.controller.ts`
 
-Controlador REST que lida com webhooks de eventos de aprendizado (ex: `/webhook/lesson-complete`).
+Controlador REST que lida com webhooks de eventos de aprendizado (ex: `/learning/lesson-completed`).
 1.  Valida o payload recebido via POST.
 2.  Prepara uma mensagem de evento de interação (`InteractionEvent`).
 3.  Usa um cliente gRPC para chamar o serviço `recalculateMetrics` no microsserviço `student-profiler`.
 4.  Retorna uma resposta indicando sucesso ou falha na chamada do serviço.
 
+## API Gateway (REST)
+
+### Documentação interativa (Swagger)
+
+* Disponível em `/docs` quando `ENABLE_SWAGGER` **não** é definido como `false`.
+* Em produção, use autenticação básica definindo `SWAGGER_BASIC_AUTH_USER` e `SWAGGER_BASIC_AUTH_PASSWORD` para proteger `/docs` e `/docs-json`.
+
+### Endpoints principais
+
+| Rota | Método | Descrição | Status | Exemplo de Request | Exemplo de Response |
+| --- | --- | --- | --- | --- | --- |
+| `/learning/lesson-completed` | POST | Webhook de conclusão de lição. | `201`, `400` | ```json
+{
+  "studentId": "student-123",
+  "lessonId": "lesson-presente-indicativo",
+  "score": 0.92,
+  "timestamp": "2024-06-30T12:00:00.000Z",
+  "metadata": { "source": "mobile-app", "durationSeconds": 600 }
+}
+``` | ```json
+{
+  "success": true,
+  "message": "Lesson completion recebida e processada (stub)."
+}
+``` |
+| `/curriculum/next` | POST | Sugere a próxima lição com base no perfil do aluno. | `200`, `400` | ```json
+{
+  "studentId": "student-123",
+  "context": "Nivel-A2|conceito:verbos-regulares"
+}
+``` | ```json
+{
+  "nextLessonId": "lesson-presente-indicativo",
+  "title": "Presente do Indicativo – Verbos Regulares",
+  "rationale": "Baixa proficiência detectada e pré-requisitos atendidos",
+  "generatedAt": "2024-06-30T12:34:56.000Z"
+}
+``` |
+| `/spanish/cards` | POST | Retorna flashcards personalizados de espanhol. | `200`, `400` | ```json
+{
+  "studentId": "student-123",
+  "topic": "verbos no presente"
+}
+``` | ```json
+{
+  "cards": [
+    { "front": "¿Cómo estás?", "back": "How are you?", "difficulty": "A1" },
+    { "front": "Yo hablo", "back": "I speak", "difficulty": "A1" }
+  ],
+  "deckVersion": "deck-v1.4.0"
+}
+``` |
+
 ### 7. `docker-compose.yml`
 
-Define e configura os serviços de infraestrutura necessários para execução local:
-*   **`postgres`**: Instância do PostgreSQL com variáveis de ambiente para banco, usuário e senha.
-*   **`neo4j`**: Instância do Neo4j com autenticação padrão (alterar para produção). Expõe as portas Bolt e HTTP.
-*   **`redis`**: Instância do Redis para cache e filas, com persistência AOF ativada.
+Define e configura os serviços de infraestrutura necessários para execução local ou produção, sempre lendo variáveis de ambiente dos arquivos `.env` ou `.env.production`:
+*   **`postgres`**: Instância do PostgreSQL com variáveis de ambiente para banco, usuário e senha (sem credenciais hardcoded).
+*   **`neo4j`**: Instância do Neo4j com autenticação configurada via variáveis de ambiente, expondo as portas Bolt e HTTP.
+*   **`redis`**: Instância do Redis para cache e filas, protegida por senha e com persistência AOF ativada.
 Todos os serviços estão em uma rede Docker isolada (`cognilingua_network`) e utilizam volumes nomeados para persistência de dados.
+
+## Configuração de Ambiente
+
+Copie um dos arquivos de exemplo e ajuste com suas credenciais:
+
+```bash
+cp .env.example .env               # Ambiente local
+cp .env.production.example .env.production  # Ambiente de produção
+```
+
+Variáveis requeridas:
+
+* `POSTGRES_PASSWORD`: Senha usada pelo usuário `cognilingua_user` no PostgreSQL.
+* `NEO4J_USERNAME`: Usuário de autenticação do Neo4j (ex.: `neo4j`).
+* `NEO4J_PASSWORD`: Senha do usuário do Neo4j.
+* `REDIS_PASSWORD`: Senha utilizada pelo Redis para acesso protegido.
 
 ## Como Executar
 
 1.  **Suba os serviços de infraestrutura:**
     ```bash
-    docker-compose up -d
+    make docker-up                # Usa .env por padrão
+    make docker-up-prod           # Usa .env.production (VPS/Render)
     ```
 2.  **Popule o Neo4j (apenas na primeira execução ou quando necessário):**
     *   Acesse o Neo4j Browser em `http://localhost:7474`.
@@ -142,3 +213,4 @@ Todos os serviços estão em uma rede Docker isolada (`cognilingua_network`) e u
     npm run start -- --project content-brain
     ```
     *Ou use um gerenciador de processos como `concurrently` para rodar todos de uma vez.*
+```
