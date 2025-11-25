@@ -1,13 +1,33 @@
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
 
+  app.setGlobalPrefix('v1');
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+
+  app.useGlobalFilters(new AllExceptionsFilter(logger));
+  app.useGlobalInterceptors(new ResponseInterceptor(), new LoggingInterceptor());
+
+  // Configuração condicional do Swagger
   const enableSwagger = process.env.ENABLE_SWAGGER !== 'false';
 
   if (enableSwagger) {
+    // Configuração de autenticação básica para produção
     if (
       process.env.NODE_ENV === 'production' &&
       process.env.SWAGGER_BASIC_AUTH_USER &&
@@ -37,29 +57,33 @@ async function bootstrap() {
       });
     }
 
+    // Configuração do DocumentBuilder com tags específicas
     const config = new DocumentBuilder()
       .setTitle('CogniLingua API')
       .setDescription('API Gateway do CogniLingua')
       .setVersion('1.0')
-      .addTag('Learning')
-      .addTag('Curriculum')
-      .addTag('Spanish')
+      .addTag('Learning') // Adiciona a tag Learning
+      .addTag('Curriculum') // Adiciona a tag Curriculum
+      .addTag('Spanish') // Adiciona a tag Spanish
+      .addServer('/v1') // Define o servidor base
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('docs', app, document, {
-      swaggerOptions: { persistAuthorization: true },
+      swaggerOptions: { persistAuthorization: true }, // Persiste o token de autorização na UI
     });
   }
 
   const port = process.env.API_GATEWAY_PORT || 3000;
   await app.listen(port);
 
-  console.log(`🚀 API Gateway ouvindo na porta ${port}`);
+  // Mensagens de log condicionais
   if (enableSwagger) {
-    console.log(`📚 Swagger disponível em http://localhost:${port}/docs`);
+    logger.log(`🚀 API Gateway ouvindo na porta ${port}`);
+    logger.log(`📚 Swagger disponível em http://localhost:${port}/docs`);
   } else {
-    console.log('📚 Swagger desabilitado (ENABLE_SWAGGER=false)');
+    logger.log(`🚀 API Gateway ouvindo na porta ${port}`);
+    logger.log('📚 Swagger desabilitado (ENABLE_SWAGGER=false)');
   }
 }
 

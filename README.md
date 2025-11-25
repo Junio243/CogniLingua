@@ -164,17 +164,34 @@ Controlador REST que lida com webhooks de eventos de aprendizado (ex: `/webhook/
 
 ### 7. `docker-compose.yml`
 
-Define e configura os serviços de infraestrutura necessários para execução local:
-*   **`postgres`**: Instância do PostgreSQL com variáveis de ambiente para banco, usuário e senha.
-*   **`neo4j`**: Instância do Neo4j com autenticação padrão (alterar para produção). Expõe as portas Bolt e HTTP.
-*   **`redis`**: Instância do Redis para cache e filas, com persistência AOF ativada.
+Define e configura os serviços de infraestrutura necessários para execução local ou produção, sempre lendo variáveis de ambiente dos arquivos `.env` ou `.env.production`:
+*   **`postgres`**: Instância do PostgreSQL com variáveis de ambiente para banco, usuário e senha (sem credenciais hardcoded).
+*   **`neo4j`**: Instância do Neo4j com autenticação configurada via variáveis de ambiente, expondo as portas Bolt e HTTP.
+*   **`redis`**: Instância do Redis para cache e filas, protegida por senha e com persistência AOF ativada.
 Todos os serviços estão em uma rede Docker isolada (`cognilingua_network`) e utilizam volumes nomeados para persistência de dados.
+
+## Configuração de Ambiente
+
+Copie um dos arquivos de exemplo e ajuste com suas credenciais:
+
+```bash
+cp .env.example .env               # Ambiente local
+cp .env.production.example .env.production  # Ambiente de produção
+```
+
+Variáveis requeridas:
+
+* `POSTGRES_PASSWORD`: Senha usada pelo usuário `cognilingua_user` no PostgreSQL.
+* `NEO4J_USERNAME`: Usuário de autenticação do Neo4j (ex.: `neo4j`).
+* `NEO4J_PASSWORD`: Senha do usuário do Neo4j.
+* `REDIS_PASSWORD`: Senha utilizada pelo Redis para acesso protegido.
 
 ## Como Executar
 
 1.  **Suba os serviços de infraestrutura:**
     ```bash
-    docker-compose up -d
+    make docker-up                # Usa .env por padrão
+    make docker-up-prod           # Usa .env.production (VPS/Render)
     ```
 2.  **Popule o Neo4j (apenas na primeira execução ou quando necessário):**
     *   Acesse o Neo4j Browser em `http://localhost:7474`.
