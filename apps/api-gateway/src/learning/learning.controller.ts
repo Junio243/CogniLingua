@@ -82,13 +82,16 @@ export class LearningController {
   ) {
     // A lógica original do LearningService.getNextItem() precisa ser reimplementada ou chamada via gRPC
     // Exemplo (stub) - Esta lógica deve ser movida para o microsserviço adequado e chamada via gRPC
-    const { studentId, completedVocabulary, accuracy, exercisesCompleted } = payload;
+    const { completedItemIds, accuracyPercent, exercisesCompleted } = payload;
     // Simula decisão baseada no payload
     const nextVocabularyItem = `vocab-item-${Date.now()}`; // Lógica real em outro serviço
+    const vocabularyMastered = Array.isArray(completedItemIds)
+      ? completedItemIds.length
+      : 0;
     const progress = {
-      currentAccuracy: accuracy,
-      exercisesCompleted,
-      vocabularyMastered: completedVocabulary.length,
+      currentAccuracy: accuracyPercent ?? null,
+      exercisesCompleted: exercisesCompleted ?? 0,
+      vocabularyMastered,
       nextSuggestedModule: 'basico-2', // Lógica real em outro serviço
     };
 
