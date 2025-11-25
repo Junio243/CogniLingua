@@ -109,6 +109,59 @@ Controlador REST que lida com webhooks de eventos de aprendizado (ex: `/webhook/
 3.  Usa um cliente gRPC para chamar o serviço `recalculateMetrics` no microsserviço `student-profiler`.
 4.  Retorna uma resposta indicando sucesso ou falha na chamada do serviço.
 
+## API Gateway (REST)
+
+### Documentação interativa (Swagger)
+
+* Disponível em `/docs` quando `ENABLE_SWAGGER` **não** é definido como `false`.
+* Em produção, use autenticação básica definindo `SWAGGER_BASIC_AUTH_USER` e `SWAGGER_BASIC_AUTH_PASSWORD` para proteger `/docs` e `/docs-json`.
+
+### Endpoints principais
+
+| Rota | Método | Descrição | Status | Exemplo de Request | Exemplo de Response |
+| --- | --- | --- | --- | --- | --- |
+| `/learning/lesson-completed` | POST | Webhook de conclusão de lição. | `201`, `400` | ```json
+{
+  "studentId": "student-123",
+  "lessonId": "lesson-presente-indicativo",
+  "score": 0.92,
+  "timestamp": "2024-06-30T12:00:00.000Z",
+  "metadata": { "source": "mobile-app", "durationSeconds": 600 }
+}
+``` | ```json
+{
+  "success": true,
+  "message": "Lesson completion recebida e processada (stub)."
+}
+``` |
+| `/curriculum/next` | POST | Sugere a próxima lição com base no perfil do aluno. | `200`, `400` | ```json
+{
+  "studentId": "student-123",
+  "context": "Nivel-A2|conceito:verbos-regulares"
+}
+``` | ```json
+{
+  "nextLessonId": "lesson-presente-indicativo",
+  "title": "Presente do Indicativo – Verbos Regulares",
+  "rationale": "Baixa proficiência detectada e pré-requisitos atendidos",
+  "generatedAt": "2024-06-30T12:34:56.000Z"
+}
+``` |
+| `/spanish/cards` | POST | Retorna flashcards personalizados de espanhol. | `200`, `400` | ```json
+{
+  "studentId": "student-123",
+  "topic": "verbos no presente"
+}
+``` | ```json
+{
+  "cards": [
+    { "front": "¿Cómo estás?", "back": "How are you?", "difficulty": "A1" },
+    { "front": "Yo hablo", "back": "I speak", "difficulty": "A1" }
+  ],
+  "deckVersion": "deck-v1.4.0"
+}
+``` |
+
 ### 7. `docker-compose.yml`
 
 Define e configura os serviços de infraestrutura necessários para execução local:
