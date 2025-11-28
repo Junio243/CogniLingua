@@ -17,4 +17,22 @@ export class CurriculumNextDto {
   @Min(0)
   @Max(1)
   cognitiveLoadOverride?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  accuracyPercent?: number;
+
+  @IsOptional()
+  @IsNumber()
+  exercisesCompleted?: number;
+
+  @IsOptional()
+  @IsString()
+  correlationId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  eventTimestamp?: number;
 }

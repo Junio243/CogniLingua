@@ -1,3 +1,4 @@
+import { Ack, CurriculumSignal } from '@cognilingua/shared';
 import { loadStudentProfilerEnv } from './env-loader';
 
 export type CognitiveLoadLevel = 'low' | 'medium' | 'high';
@@ -51,5 +52,17 @@ export function calculateCognitiveLoad(studentId: string): CognitiveLoadResult {
     score,
     level,
     thresholds: { lowMax, mediumMax },
+  };
+}
+
+export function acknowledgeCurriculumSignal(signal: CurriculumSignal): Ack {
+  const correlationId = signal.correlationId ?? `prof-${Date.now()}`;
+  const cognitiveLoad =
+    signal.cognitiveLoadOverride ?? calculateCognitiveLoad(signal.studentId).score;
+
+  return {
+    correlationId,
+    status: 'accepted',
+    message: `Curriculum signal para ${signal.studentId} recebido com carga ${cognitiveLoad}.`,
   };
 }
