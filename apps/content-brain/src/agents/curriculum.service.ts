@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Neo4jService, ConceptNode } from '../neo4j/neo4j.service';
 import { StudentProfilerService } from '../student-profiler/student-profiler.service';
-import { StudentProfile } from '@cognilingua/shared';
+import {
+  CurriculumNextResponse,
+  CurriculumSignal,
+  StudentProfile,
+} from '@cognilingua/shared';
 import {
   HistoryAlignment,
   SemanticAlignmentService,
@@ -208,6 +212,49 @@ export class CurriculumService {
       targetMastery,
       steps,
       semanticEvidence,
+    };
+  }
+
+  async buildNextConceptFromSignal(
+    signal: CurriculumSignal,
+  ): Promise<CurriculumNextResponse> {
+    const personalized = await this.getPersonalizedCurriculum(signal.studentId);
+    const topConcept = personalized[0];
+
+    const fallbackConceptId = signal.currentConceptId
+      ? `${signal.currentConceptId}-next`
+      : 'concept-0001';
+
+    const recommendedLoad = Math.min(
+      1,
+      Math.max(0, Number(signal.cognitiveLoadOverride ?? 0.5)),
+    );
+
+    const projectedMastery = Math.min(
+      1,
+      Number(topConcept?.mastery ?? signal.mastery ?? 0) + 0.05,
+    );
+
+    const rationaleParts = [
+      'Recomendação gRPC com contrato v1 enriquecido.',
+    ];
+
+    if (typeof signal.accuracyPercent === 'number') {
+      rationaleParts.push(
+        `Acurácia recente: ${(Number(signal.accuracyPercent) * 100).toFixed(1)}%.`,
+      );
+    }
+
+    rationaleParts.push(
+      `Carga cognitiva sugerida: ${(recommendedLoad * 100).toFixed(0)}%.`,
+    );
+
+    return {
+      nextConceptId: topConcept?.id ?? fallbackConceptId,
+      rationale: rationaleParts.join(' '),
+      recommendedLoad,
+      projectedMastery,
+      correlationId: signal.correlationId,
     };
   }
 }

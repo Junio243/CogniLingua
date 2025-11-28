@@ -18,6 +18,7 @@ import { LessonCompletedWebhookDto } from './dto/lesson-completed-webhook.dto';
 import { NextItemRequestDto } from './dto/next-item-request.dto';
 import { SpanishCardsDto } from './dto/spanish-cards.dto';
 import { LearningService } from './learning.service';
+import { CurriculumNextResponse } from '@cognilingua/shared';
 
 @ApiTags('Learning')
 @Controller('learning')
@@ -163,7 +164,7 @@ export class LearningController {
   async getNextCurriculumStep(
     @Body(new ValidationPipe({ transform: true }))
     payload: CurriculumNextDto,
-  ): Promise<{ nextConceptId: string; rationale: string }> {
+  ): Promise<CurriculumNextResponse> {
     return this.learningService.forwardCurriculumRequest(payload);
   }
 

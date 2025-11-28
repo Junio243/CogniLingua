@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package curriculum.orchestrator.v1;
+
+// Contrato versionado para orquestração de currículo.
+service CurriculumOrchestrator {
+  // Envia um sinal rico de aprendizado para o student-profiler.
+  rpc SendLearningSignal(CurriculumSignal) returns (Ack);
+
+  // Solicita ao content-brain o próximo conceito recomendado.
+  rpc RequestNextConcept(CurriculumSignal) returns (CurriculumNextResponse);
+}
+
+message CurriculumSignal {
+  string student_id = 1;
+  string current_concept_id = 2;
+  double mastery = 3;
+  // Permite sobrescrever a carga cognitiva calculada pelo student-profiler.
+  double cognitive_load_override = 4;
+  // Precisão recente do aluno (0-1) para calibrar recomendação.
+  double accuracy_percent = 5;
+  // Quantidade de exercícios resolvidos no contexto corrente.
+  uint32 exercises_completed = 6;
+  // Correlação para tracing/distribuição do evento.
+  string correlation_id = 7;
+  // Timestamp do evento em epoch millis.
+  int64 event_timestamp = 8;
+}
+
+message CurriculumNextResponse {
+  string next_concept_id = 1;
+  string rationale = 2;
+  // Carga cognitiva recomendada pelo content-brain (0-1).
+  double recommended_load = 3;
+  // Mastery projetado após aplicar a recomendação.
+  double projected_mastery = 4;
+  string correlation_id = 5;
+}
+
+message Ack {
+  string correlation_id = 1;
+  string status = 2;
+  string message = 3;
+}
