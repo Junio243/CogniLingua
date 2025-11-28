@@ -1,23 +1,19 @@
 export interface StudentProfile {
-  id: string;
-  cognitiveState: CognitiveState;
+  studentId: string;
+  cognitiveState: CognitiveStateEntry[];
+  overallProficiency?: number;
+  learningVelocity?: number;
   interactionHistory: InteractionEvent[];
   fsrsParams: FSRSParameters; // Parameters for Spaced Repetition
 }
 
-export interface CognitiveState {
-  conceptProficiencies: Map<string, ConceptProficiency>; // Key: Concept ID
-  overallProficiency: number;
-  learningVelocity: number;
-  // ... other cognitive metrics
-}
-
-export interface ConceptProficiency {
+export interface CognitiveStateEntry {
   conceptId: string;
-  bktState: BKTState; // Bayesian Knowledge Tracing state for this concept
-  fsrsState: FSRSState; // FSRS state for this concept's flashcard
-  lastInteraction: Date;
-  confidence: number; // 0-1 scale
+  mastery: number;
+  bktState?: BKTState; // Bayesian Knowledge Tracing state for this concept
+  fsrsState?: FSRSState; // FSRS state for this concept's flashcard
+  lastInteraction?: Date;
+  confidence?: number; // 0-1 scale
 }
 
 export interface BKTState {
