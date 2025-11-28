@@ -1,0 +1,44 @@
+{
+  "info": {
+    "name": "CogniLingua API Gateway",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Exemplos de chamadas para o API Gateway, incluindo o novo parâmetro cognitiveLoadOverride."
+  },
+  "item": [
+    {
+      "name": "Learning - Próximo passo do currículo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"studentId\": \"student-123\",\n  \"currentConceptId\": \"verbos-regulares-presente\",\n  \"mastery\": 0.42,\n  \"cognitiveLoadOverride\": 0.65\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/learning/curriculum/next",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "learning",
+            "curriculum",
+            "next"
+          ]
+        },
+        "description": "Repassa o override de carga cognitiva via gRPC para o student-profiler e solicita o próximo conceito ao content-brain."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

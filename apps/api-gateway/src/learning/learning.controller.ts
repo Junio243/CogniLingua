@@ -17,11 +17,14 @@ import { CurriculumNextDto } from './dto/curriculum-next.dto';
 import { LessonCompletedWebhookDto } from './dto/lesson-completed-webhook.dto';
 import { NextItemRequestDto } from './dto/next-item-request.dto';
 import { SpanishCardsDto } from './dto/spanish-cards.dto';
+import { LearningService } from './learning.service';
 
 @ApiTags('Learning')
 @Controller('learning')
 export class LearningController {
   private readonly logger = new Logger(LearningController.name);
+
+  constructor(private readonly learningService: LearningService) {}
 
   // 👉 Endpoint acessível pelo navegador (GET)
   @Get('status')
@@ -147,12 +150,10 @@ export class LearningController {
       '✅ Lesson completed webhook recebido',
     );
 
-    // Aqui, o controlador deve chamar o microsserviço student-profiler via gRPC
-    // clientGrpcStudentProfiler.recalculateMetrics(payload);
+    const response = await this.learningService.forwardLessonCompleted(payload);
 
     return {
-      success: true,
-      message: 'Lesson completion recebida e processada (stub).',
+      ...response,
       processedAt: new Date().toISOString(),
     };
   }
@@ -163,16 +164,7 @@ export class LearningController {
     @Body(new ValidationPipe({ transform: true }))
     payload: CurriculumNextDto,
   ): Promise<{ nextConceptId: string; rationale: string }> {
-    // A lógica real deve estar no microsserviço content-brain e ser chamada via gRPC
-    // Exemplo (stub):
-    const nextConceptId = payload.currentConceptId
-      ? `${payload.currentConceptId}-next`
-      : 'concept-0001';
-
-    return {
-      nextConceptId,
-      rationale: 'Recomendação baseada em progresso recente (stub).',
-    };
+    return this.learningService.forwardCurriculumRequest(payload);
   }
 
   // Endpoint da segunda versão para obter flashcards de espanhol
