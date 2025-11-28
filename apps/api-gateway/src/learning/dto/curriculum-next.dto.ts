@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CurriculumNextDto {
   @IsString()
@@ -11,4 +11,10 @@ export class CurriculumNextDto {
   @IsOptional()
   @IsNumber()
   mastery?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  cognitiveLoadOverride?: number;
 }
