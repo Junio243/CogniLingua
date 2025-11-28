@@ -2,10 +2,28 @@ import { Injectable } from '@nestjs/common';
 import { Neo4jService, ConceptNode } from '../neo4j/neo4j.service';
 import { StudentProfilerService } from '../student-profiler/student-profiler.service';
 import { StudentProfile } from '@cognilingua/shared';
+import {
+  HistoryAlignment,
+  SemanticAlignmentService,
+} from './semantic-alignment.service';
 
 export interface CurriculumConcept extends ConceptNode {
   mastery: number;
   readinessScore: number;
+}
+
+export interface RemediationLessonStep {
+  title: string;
+  intent: string;
+  payload: Record<string, unknown>;
+}
+
+export interface RemediationLesson {
+  conceptId: string;
+  proficiencyGap: number;
+  targetMastery: number;
+  steps: RemediationLessonStep[];
+  semanticEvidence: HistoryAlignment[];
 }
 
 @Injectable()
@@ -13,6 +31,7 @@ export class CurriculumService {
   constructor(
     private readonly neo4jService: Neo4jService,
     private readonly studentProfilerService: StudentProfilerService,
+    private readonly semanticAlignmentService: SemanticAlignmentService,
   ) {}
 
   /**
@@ -116,5 +135,79 @@ export class CurriculumService {
     }
 
     return count > 0 ? total / count : 0;
+  }
+
+  /**
+   * Constrói um micro-plano de aula para "remediar" um gap de proficiência específico.
+   * Usa embeddings semânticos do histórico para contextualizar o feedback.
+   */
+  async generateRemediationLesson(
+    conceptId: string,
+    proficiencyGap: number,
+    studentId?: string,
+  ): Promise<RemediationLesson> {
+    const boundedGap = Math.min(Math.max(proficiencyGap, 0), 1);
+    const profile = studentId
+      ? await this.studentProfilerService.getStudentProfile(studentId)
+      : null;
+
+    const masteryMap = this.buildMasteryMap(profile);
+    const currentMastery = masteryMap.get(conceptId) ?? 0;
+    const targetMastery = Math.min(1, currentMastery + boundedGap);
+
+    const semanticEvidence = await this.semanticAlignmentService.alignHistoryWithConcepts(
+      profile,
+      {
+        [conceptId]: [
+          `Remediation focus for ${conceptId}`,
+          'Identify misconceptions and prior attempts',
+          'Surface just-in-time explanation references',
+        ],
+      },
+    );
+
+    const evidenceSlice = semanticEvidence.slice(0, 3);
+    const diagnosticHint = evidenceSlice[0]?.evidence ??
+      'Nenhuma interação anterior relevante encontrada.';
+
+    const steps: RemediationLessonStep[] = [
+      {
+        title: 'Diagnóstico orientado por histórico',
+        intent: 'Contextualizar o erro recente ou lacuna de compreensão.',
+        payload: {
+          conceptId,
+          diagnosticHint,
+          similarity: evidenceSlice[0]?.similarity ?? 0,
+        },
+      },
+      {
+        title: 'Micro-explicação adaptada',
+        intent:
+          'Fornecer explicação curta ancorada nos exemplos já vistos pelo aluno.',
+        payload: {
+          conceptId,
+          anchorSamples: evidenceSlice.map((item) => item.evidence),
+          targetMastery,
+        },
+      },
+      {
+        title: 'Prática just-in-time',
+        intent:
+          'Aplicar um exercício rápido calibrado pelo gap de proficiência e FSRS.',
+        payload: {
+          conceptId,
+          difficultyScaler: 0.5 + boundedGap / 2,
+          expectedMasteryLift: boundedGap,
+        },
+      },
+    ];
+
+    return {
+      conceptId,
+      proficiencyGap: boundedGap,
+      targetMastery,
+      steps,
+      semanticEvidence,
+    };
   }
 }
