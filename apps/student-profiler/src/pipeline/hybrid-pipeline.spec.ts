@@ -64,4 +64,42 @@ describe('HybridProfilerPipeline', () => {
     expect(log).toHaveLength(1);
     expect(log[0].engineUsed).toBe('transformer');
   });
+
+  it('registra fallback para Transformer após uma execução bem-sucedida do BKT', () => {
+    const bktStateAfterSuccess: BKTState = { ...baseState, pKnown: 0.33, pLo: 0.35 };
+    const transformerState: BKTState = { ...baseState, pKnown: 0.72, pLo: 0.75 };
+
+    const bktEngine: BKTEngine = {
+      updateKnowledgeState: jest
+        .fn()
+        .mockReturnValueOnce(bktStateAfterSuccess)
+        .mockImplementationOnce(() => {
+          throw new Error('Intermitência no BKT');
+        }),
+    } as unknown as BKTEngine;
+
+    const transformer: TransformerEstimator = {
+      estimateState: jest.fn().mockReturnValue(transformerState),
+    };
+
+    const ticks = [10, 18, 30, 40, 48, 58];
+    const pipeline = new HybridProfilerPipeline(bktEngine, transformer, () => ticks.shift() as number);
+
+    const firstDecision = pipeline.runStep(baseState, true);
+    expect(firstDecision.engineUsed).toBe('bkt');
+    expect(firstDecision.state).toEqual(bktStateAfterSuccess);
+    expect(firstDecision.metrics.latencyMs).toBe(8);
+
+    const fallbackDecision = pipeline.runStep(firstDecision.state, false);
+    expect(fallbackDecision.engineUsed).toBe('transformer');
+    expect(fallbackDecision.state).toEqual(transformerState);
+    expect(fallbackDecision.metrics.latencyMs).toBe(8);
+    expect(fallbackDecision.metrics.fallbackReason).toContain('Intermitência no BKT');
+    expect(transformer.estimateState).toHaveBeenCalledWith(firstDecision.state, false);
+
+    const log = pipeline.getDecisionLog();
+    expect(log).toHaveLength(2);
+    expect(log[0].engineUsed).toBe('bkt');
+    expect(log[1].engineUsed).toBe('transformer');
+  });
 });
