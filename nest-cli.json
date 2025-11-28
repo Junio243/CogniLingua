@@ -33,6 +33,21 @@
         "tsConfigPath": "apps/content-brain/tsconfig.app.json"
       }
     },
+    "cognitive-analyzer": {
+      "type": "application",
+      "root": "apps/cognitive-analyzer",
+      "entryFile": "main",
+      "sourceRoot": "apps/cognitive-analyzer/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/cognitive-analyzer/tsconfig.app.json",
+        "assets": [
+          {
+            "include": "**/*.proto",
+            "outDir": "dist/apps/cognitive-analyzer"
+          }
+        ]
+      }
+    },
     "shared": {
       "type": "library",
       "root": "libs/shared",

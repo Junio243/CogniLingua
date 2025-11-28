@@ -1,0 +1,11 @@
+FROM node:20-alpine AS base
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build:cognitive-analyzer
+
+EXPOSE 4010
+CMD ["node", "dist/apps/cognitive-analyzer/main.js"]

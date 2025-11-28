@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package cognitive.analyzer;
+
+service CognitiveAnalyzerService {
+  rpc streamInteractions (InteractionStreamRequest) returns (InteractionStreamResponse);
+  rpc emitBurnoutAlert (BurnoutAlertRequest) returns (BurnoutAlertAck);
+}
+
+message InteractionStreamRequest {
+  repeated InteractionEvent events = 1;
+}
+
+message InteractionStreamResponse {
+  uint32 accepted = 1;
+  string status = 2;
+}
+
+message InteractionEvent {
+  string id = 1;
+  string userId = 2;
+  string content = 3;
+  int64 timestamp = 4;
+}
+
+message BurnoutAlertRequest {
+  string userId = 1;
+  string riskLevel = 2;
+  string correlationId = 3;
+  int64 observedAt = 4;
+}
+
+message BurnoutAlertAck {
+  string userId = 1;
+  string status = 2;
+  string message = 3;
+}
