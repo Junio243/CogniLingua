@@ -41,6 +41,26 @@ services:
     networks:
       - cognilingua_network
 
+  cognitive-analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile.cognitive-analyzer
+    container_name: cognilingua_cognitive_analyzer
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      INTERACTION_STREAM_KEY: cognitive:interactions
+      INTERACTION_GROUP: cognitive-analyzer
+      COGNITIVE_ANALYZER_PORT: 4010
+      COGNITIVE_ANALYZER_GRPC_TARGET: ${COGNITIVE_ANALYZER_GRPC_TARGET:-localhost:50061}
+    depends_on:
+      - redis
+    ports:
+      - "4010:4010"
+    networks:
+      - cognilingua_network
+
 volumes:
   postgres_data:
   neo4j_data:
