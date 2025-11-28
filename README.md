@@ -72,19 +72,12 @@ Arquivo Cypher que define a estrutura inicial do **Grafo de Conhecimento** no Ne
 ### 3. `libs/shared/src/interfaces/student-profile.interface.ts`
 
 Define a interface `StudentProfile` em TypeScript, que serve como o contrato para o "Gêmeo Digital" do aluno. Ela encapsula:
-- **`id`**: Identificador único do aluno.
-- **`cognitiveState`**: Objeto contendo:
-  - `conceptProficiencies`: Mapa onde as chaves são IDs de conceitos e os valores são objetos `ConceptProficiency`.
-  - `overallProficiency`: Proficiência geral estimada.
-  - `learningVelocity`: Velocidade de aprendizado.
+- **`studentId`**: Identificador único do aluno.
+- **`cognitiveState`**: Array de objetos por conceito contendo pelo menos `conceptId` e `mastery` numérico, com estados opcionais de BKT (`bktState`), FSRS (`fsrsState`), `lastInteraction` e `confidence`.
+- **`overallProficiency`**: Proficiência geral estimada (opcional).
+- **`learningVelocity`**: Velocidade de aprendizado (opcional).
 - **`interactionHistory`**: Array de eventos de interação do aluno.
 - **`fsrsParams`**: Parâmetros globais para o algoritmo FSRS.
-
-A interface `ConceptProficiency` detalha o estado cognitivo para um conceito específico:
-- `bktState`: Estado do BKT para esse conceito.
-- `fsrsState`: Estado do FSRS para revisão desse conceito.
-- `lastInteraction`: Timestamp da última interação.
-- `confidence`: Nível de confiança (0-1).
 
 ### 4. `apps/content-brain/src/agents/curriculum.service.ts`
 
