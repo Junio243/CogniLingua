@@ -73,6 +73,7 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('v1/docs', app, document, {
       swaggerOptions: { persistAuthorization: true }, // Persiste o token de autorização na UI
+      useGlobalPrefix: true,
     });
   }
 
