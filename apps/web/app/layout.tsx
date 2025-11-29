@@ -1,20 +1,67 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { cookies, headers } from 'next/headers';
 import './globals.css';
+import { Providers, type Locale, type Theme } from './providers';
 
 export const metadata: Metadata = {
   title: 'CogniLingua | Espanhol sob medida',
   description: 'Landing page e exercícios responsivos para praticar espanhol com feedback imediato.',
 };
 
+const SUPPORTED_LOCALES: Locale[] = ['pt', 'es', 'en'];
+const FALLBACK_LOCALE: Locale = 'pt';
+
+function normalizeLocale(locale: string | undefined): Locale {
+  if (locale && SUPPORTED_LOCALES.includes(locale as Locale)) {
+    return locale as Locale;
+  }
+  return FALLBACK_LOCALE;
+}
+
+function getPathLocale(pathname: string): Locale | null {
+  const [, maybeLocale] = pathname.split('/');
+  if (SUPPORTED_LOCALES.includes(maybeLocale as Locale)) {
+    return maybeLocale as Locale;
+  }
+  return null;
+}
+
+function resolveLocale(): Locale {
+  const headerList = headers();
+  const pathname = headerList.get('x-pathname') ?? headerList.get('next-url') ?? '/';
+  const pathLocale = getPathLocale(pathname);
+  if (pathLocale) {
+    return pathLocale;
+  }
+
+  const localeCookie = cookies().get('locale')?.value;
+  return normalizeLocale(localeCookie);
+}
+
+function resolveTheme(): Theme {
+  const themeCookie = cookies().get('theme')?.value;
+  if (themeCookie === 'light' || themeCookie === 'dark') {
+    return themeCookie;
+  }
+  return 'dark';
+}
+
 export default function RootLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const locale = resolveLocale();
+  const theme = resolveTheme();
+
   return (
-    <html lang="pt-BR">
-      <body className="min-h-screen bg-background font-sans text-slate-50">{children}</body>
+    <html lang={locale} data-theme={theme} suppressHydrationWarning>
+      <body className="min-h-screen font-sans antialiased">
+        <Providers locale={locale} fallbackLocale={FALLBACK_LOCALE} theme={theme}>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
