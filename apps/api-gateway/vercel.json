@@ -2,6 +2,7 @@
   "version": 2,
   "builds": [{ "src": "api/index.ts", "use": "@vercel/node" }],
   "routes": [
+    { "src": "/", "status": 302, "dest": "/v1/" },
     { "src": "/v1/(.*)", "dest": "/api/index.ts" },
     { "src": "/docs(?:/.*)?", "dest": "/api/index.ts" }
   ]
