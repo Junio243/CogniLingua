@@ -72,10 +72,11 @@ async function bootstrapServer() {
       .addServer('/v1')
       .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('docs', app, document, {
-      swaggerOptions: { persistAuthorization: true },
-    });
+   const document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup('docs', app, document, {
+  swaggerOptions: { persistAuthorization: true },
+  useGlobalPrefix: true,
+});
   }
 
   await app.init();
