@@ -7,7 +7,7 @@ const defaultHeaders: HeadersInit = {
 
 export type FetchMode = 'ssr' | 'csr';
 
-export type HttpRequestOptions = RequestInit & {
+export type HttpRequestOptions = Omit<RequestInit, 'mode'> & {
   /**
    * Define se a requisição será feita em contexto de SSR (default) ou CSR.
    * Quando `ssr`, cache: 'no-store' é aplicado para evitar dados stale.
@@ -65,7 +65,7 @@ function mergeHeaders(customHeaders?: HeadersInit): HeadersInit {
 
 function normalizeOptions(options: HttpRequestOptions = {}): HttpRequestOptions {
   const { mode = 'ssr', headers, ...rest } = options;
-  const cacheConfig: RequestInit = mode === 'ssr' ? { cache: 'no-store' } : {};
+  const cacheConfig: Omit<RequestInit, 'mode'> = mode === 'ssr' ? { cache: 'no-store' } : {};
 
   return {
     ...cacheConfig,
@@ -79,7 +79,7 @@ async function request<T>(
   options: HttpRequestOptions = {},
   httpMethod: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
 ): Promise<T> {
-  const { body, query, ...fetchOptions } = normalizeOptions(options);
+  const { body, query, mode: _mode, ...fetchOptions } = normalizeOptions(options);
   const url = buildUrl(path, query);
   const finalOptions: RequestInit = {
     ...fetchOptions,
@@ -104,7 +104,7 @@ export function httpGet<T>(path: string, options?: HttpRequestOptions): Promise<
 }
 
 export function httpPost<T>(path: string, body?: unknown, options?: HttpRequestOptions): Promise<T> {
-  return request<T>(path, { ...options, body }, 'POST');
+  return request<T>(path, { ...options, body: body as BodyInit | undefined }, 'POST');
 }
 
 export const httpClient = {
