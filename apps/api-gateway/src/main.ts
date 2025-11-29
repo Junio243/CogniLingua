@@ -40,6 +40,7 @@ async function bootstrap() {
       process.env.SWAGGER_BASIC_AUTH_USER &&
       process.env.SWAGGER_BASIC_AUTH_PASSWORD
     ) {
+      // Use as variáveis de configuração em vez de valores hardcoded
       app.use([DOCS_URL, DOCS_JSON_URL], (req, res, next) => {
         const header = req.headers.authorization;
 
@@ -76,9 +77,10 @@ async function bootstrap() {
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
+    // Use a variável de configuração para o path do Swagger
     SwaggerModule.setup(DOCS_PATH, app, document, {
-      useGlobalPrefix: true,
       swaggerOptions: { persistAuthorization: true }, // Persiste o token de autorização na UI
+      useGlobalPrefix: true,
     });
   }
 
@@ -88,6 +90,7 @@ async function bootstrap() {
   // Mensagens de log condicionais
   if (enableSwagger) {
     logger.log(`🚀 API Gateway ouvindo na porta ${port}`);
+    // Use a variável de configuração para a URL do Swagger
     logger.log(`📚 Swagger disponível em http://localhost:${port}${DOCS_URL}`);
   } else {
     logger.log(`🚀 API Gateway ouvindo na porta ${port}`);
