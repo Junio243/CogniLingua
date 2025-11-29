@@ -9,14 +9,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const learning_controller_1 = require("./learning/learning.controller");
+const curriculum_controller_1 = require("./curriculum/curriculum.controller");
+const spanish_controller_1 = require("./spanish/spanish.controller");
+const learning_service_1 = require("./learning/learning.service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [],
-        controllers: [learning_controller_1.LearningController],
-        providers: [],
+        controllers: [learning_controller_1.LearningController, curriculum_controller_1.CurriculumController, spanish_controller_1.SpanishController],
+        providers: [learning_service_1.LearningService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

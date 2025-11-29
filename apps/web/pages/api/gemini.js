@@ -8,7 +8,8 @@ export default async function handler(req, res) {
   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
 
   try {
-    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+    // Using gemini-1.5-flash as requested (standard efficient model)
+    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
     const body = {
       contents: [
@@ -18,11 +19,10 @@ export default async function handler(req, res) {
       ],
     };
 
-    const r = await fetch(endpoint, {
+    const r = await fetch(`${endpoint}?key=${process.env.GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GEMINI_API_KEY,
       },
       body: JSON.stringify(body),
     });

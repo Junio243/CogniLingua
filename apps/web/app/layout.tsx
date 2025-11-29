@@ -27,33 +27,35 @@ function getPathLocale(pathname: string): Locale | null {
   return null;
 }
 
-function resolveLocale(): Locale {
-  const headerList = headers();
+async function resolveLocale(): Promise<Locale> {
+  const headerList = await headers();
   const pathname = headerList.get('x-pathname') ?? headerList.get('next-url') ?? '/';
   const pathLocale = getPathLocale(pathname);
   if (pathLocale) {
     return pathLocale;
   }
 
-  const localeCookie = cookies().get('locale')?.value;
+  const cookieStore = await cookies();
+  const localeCookie = cookieStore.get('locale')?.value;
   return normalizeLocale(localeCookie);
 }
 
-function resolveTheme(): Theme {
-  const themeCookie = cookies().get('theme')?.value;
+async function resolveTheme(): Promise<Theme> {
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get('theme')?.value;
   if (themeCookie === 'light' || themeCookie === 'dark') {
     return themeCookie;
   }
   return 'dark';
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const locale = resolveLocale();
-  const theme = resolveTheme();
+  const locale = await resolveLocale();
+  const theme = await resolveTheme();
 
   return (
     <html lang={locale} data-theme={theme} suppressHydrationWarning>

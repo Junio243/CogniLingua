@@ -11,26 +11,36 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LessonCompletedWebhookDto = void 0;
 const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
 class LessonCompletedWebhookDto {
 }
 exports.LessonCompletedWebhookDto = LessonCompletedWebhookDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Identificador único do aluno', example: 'student-123' }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], LessonCompletedWebhookDto.prototype, "studentId", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Identificador da lição concluída', example: 'lesson-presente-indicativo' }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], LessonCompletedWebhookDto.prototype, "lessonId", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Score bruto da tentativa', example: 0.92 }),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], LessonCompletedWebhookDto.prototype, "score", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Timestamp ISO8601 do evento', example: '2024-06-30T12:00:00.000Z' }),
     (0, class_validator_1.IsISO8601)(),
     __metadata("design:type", String)
 ], LessonCompletedWebhookDto.prototype, "timestamp", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Metadados adicionais enviados pelo cliente',
+        example: { source: 'mobile-app', durationSeconds: 600 },
+        required: false,
+    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsObject)(),
     __metadata("design:type", Object)
