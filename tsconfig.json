@@ -21,5 +21,6 @@
       "@cognilingua/shared": ["libs/shared/src"],
       "@cognilingua/shared/*": ["libs/shared/src/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "dist", "apps/web", "apps/web/**", ".vercel", ".next"]
 }

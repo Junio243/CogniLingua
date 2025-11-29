@@ -1,17 +1,6 @@
-export interface BKTState {
-    pLo: number;
-    pG: number;
-    pS: number;
-    pT: number;
-    pKnown: number;
-}
-export interface CognitiveState {
-    conceptId: string;
-    mastery: number;
-    difficulty: number;
-    lastInteraction: string;
-}
-export interface StudentProfile {
-    studentId: string;
-    cognitiveState: CognitiveState[];
-}
+export * from './interfaces/student-profile.interface';
+export * from './curriculum/modules';
+export * from './proto/curriculum-orchestrator';
+export * from './proto/curriculum/orchestrator/v1/Ack';
+export * from './proto/curriculum/orchestrator/v1/CurriculumNextResponse';
+export * from './proto/curriculum/orchestrator/v1/CurriculumSignal';

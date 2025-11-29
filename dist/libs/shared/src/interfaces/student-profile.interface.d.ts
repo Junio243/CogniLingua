@@ -1,20 +1,18 @@
 export interface StudentProfile {
-    id: string;
-    cognitiveState: CognitiveState;
+    studentId: string;
+    cognitiveState: CognitiveStateEntry[];
+    overallProficiency?: number;
+    learningVelocity?: number;
     interactionHistory: InteractionEvent[];
     fsrsParams: FSRSParameters;
 }
-export interface CognitiveState {
-    conceptProficiencies: Map<string, ConceptProficiency>;
-    overallProficiency: number;
-    learningVelocity: number;
-}
-export interface ConceptProficiency {
+export interface CognitiveStateEntry {
     conceptId: string;
-    bktState: BKTState;
-    fsrsState: FSRSState;
-    lastInteraction: Date;
-    confidence: number;
+    mastery: number;
+    bktState?: BKTState;
+    fsrsState?: FSRSState;
+    lastInteraction?: Date;
+    confidence?: number;
 }
 export interface BKTState {
     pLo: number;
