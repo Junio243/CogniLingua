@@ -5,12 +5,17 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import {
+  DOCS_JSON_URL,
+  DOCS_PATH,
+  DOCS_URL,
+  GLOBAL_PREFIX,
+} from './docs.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
-
-  app.setGlobalPrefix('v1', {
+  app.setGlobalPrefix(GLOBAL_PREFIX, {
     exclude: [{ path: '/', method: RequestMethod.ALL }],
   });
 
@@ -35,7 +40,7 @@ async function bootstrap() {
       process.env.SWAGGER_BASIC_AUTH_USER &&
       process.env.SWAGGER_BASIC_AUTH_PASSWORD
     ) {
-      app.use(['/docs', '/docs-json'], (req, res, next) => {
+      app.use([DOCS_URL, DOCS_JSON_URL], (req, res, next) => {
         const header = req.headers.authorization;
 
         if (!header || !header.startsWith('Basic ')) {
@@ -67,11 +72,12 @@ async function bootstrap() {
       .addTag('Learning') // Adiciona a tag Learning
       .addTag('Curriculum') // Adiciona a tag Curriculum
       .addTag('Spanish') // Adiciona a tag Spanish
-      .addServer('/v1') // Define o servidor base
+      .addServer(`/${GLOBAL_PREFIX}`) // Define o servidor base
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('docs', app, document, {
+    SwaggerModule.setup(DOCS_PATH, app, document, {
+      useGlobalPrefix: true,
       swaggerOptions: { persistAuthorization: true }, // Persiste o token de autorização na UI
     });
   }
@@ -82,7 +88,7 @@ async function bootstrap() {
   // Mensagens de log condicionais
   if (enableSwagger) {
     logger.log(`🚀 API Gateway ouvindo na porta ${port}`);
-    logger.log(`📚 Swagger disponível em http://localhost:${port}/docs`);
+    logger.log(`📚 Swagger disponível em http://localhost:${port}${DOCS_URL}`);
   } else {
     logger.log(`🚀 API Gateway ouvindo na porta ${port}`);
     logger.log('📚 Swagger desabilitado (ENABLE_SWAGGER=false)');
