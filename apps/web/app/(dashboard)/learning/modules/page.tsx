@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+
+import { Badge } from '../../../../components/ui/badge';
+import { Button } from '../../../../components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../../components/ui/card';
 import type { LearningModule } from './data';
 import { fetchModulesCached as fetchModules } from './data';
 
@@ -20,10 +24,10 @@ function CompletionBadge({ criteria }: { criteria?: LearningModule['completionCr
   if (!criteria) return null;
 
   return (
-    <div className="module-badges" aria-label="Critérios de conclusão">
-      {criteria.minAccuracy ? <span>🎯 {Math.round(criteria.minAccuracy * 100)}% acurácia</span> : null}
-      {criteria.minExercises ? <span>✅ {criteria.minExercises}+ exercícios</span> : null}
-      {criteria.minVocabulary ? <span>🧠 {criteria.minVocabulary}+ vocabulário</span> : null}
+    <div className="flex flex-wrap gap-2" aria-label="Critérios de conclusão">
+      {criteria.minAccuracy ? <Badge>🎯 {Math.round(criteria.minAccuracy * 100)}% acurácia</Badge> : null}
+      {criteria.minExercises ? <Badge variant="neutral">✅ {criteria.minExercises}+ exercícios</Badge> : null}
+      {criteria.minVocabulary ? <Badge variant="outline">🧠 {criteria.minVocabulary}+ vocabulário</Badge> : null}
     </div>
   );
 }
@@ -32,34 +36,45 @@ export default async function ModulesPage() {
   const modules = await fetchModules();
 
   return (
-    <section className="module-grid">
+    <section className="card-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {modules.map((module) => (
-        <article key={module.id} className="module-card">
-          <header>
-            <p className="muted">Módulo</p>
-            <h2>{module.title}</h2>
-          </header>
-
-          {module.objectives && module.objectives.length ? (
-            <ul className="muted">
-              {module.objectives.map((objective) => (
-                <li key={objective}>• {objective}</li>
-              ))}
-            </ul>
-          ) : null}
-
-          <CompletionBadge criteria={module.completionCriteria} />
-
-          <div className="module-footer">
-            <div>
-              <p className="muted">Pré-requisitos</p>
-              <span>{module.prerequisites && module.prerequisites.length > 0 ? module.prerequisites.join(', ') : 'Livre acesso'}</span>
+        <Card key={module.id} className="group border-white/5 bg-slate-900/40 transition hover:-translate-y-0.5 hover:border-primary-400/30 hover:shadow-glow">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Badge variant="neutral">Módulo</Badge>
+              {module.prerequisites?.length ? (
+                <Badge variant="outline">{module.prerequisites.length} pré-req.</Badge>
+              ) : (
+                <Badge variant="outline">Livre</Badge>
+              )}
             </div>
-            <Link href={`/learning/modules/${module.id}`} className="cta-link">
-              Abrir módulo
-            </Link>
-          </div>
-        </article>
+            <CardTitle>{module.title}</CardTitle>
+            <CardDescription>
+              {module.objectives && module.objectives.length
+                ? module.objectives.slice(0, 3).join(' · ')
+                : 'Objetivos serão sugeridos conforme seu perfil.'}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-3">
+            <CompletionBadge criteria={module.completionCriteria} />
+            {module.prerequisites?.length ? (
+              <p className="text-sm text-slate-400">Pré-requisitos: {module.prerequisites.join(', ')}</p>
+            ) : (
+              <p className="text-sm text-slate-400">Sem bloqueios de acesso para este módulo.</p>
+            )}
+          </CardContent>
+
+          <CardFooter className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">Abertura</p>
+              <p className="text-sm text-slate-200">Conteúdo adaptado ao seu ritmo</p>
+            </div>
+            <Button asChild variant="secondary" size="sm">
+              <Link href={`/learning/modules/${module.id}`}>Abrir módulo</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       ))}
     </section>
   );
