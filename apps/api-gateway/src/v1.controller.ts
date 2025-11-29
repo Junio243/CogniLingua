@@ -1,10 +1,10 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
 
-@Controller()
-export class RootController {
+@Controller('v1')
+export class V1Controller {
   @Get()
-  redirectToApi(@Res() res: Response) {
+  redirectToDocs(@Res() res: Response) {
     return res.redirect('/v1/docs');
   }
 }

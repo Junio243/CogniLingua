@@ -35,7 +35,7 @@ async function bootstrap() {
       process.env.SWAGGER_BASIC_AUTH_USER &&
       process.env.SWAGGER_BASIC_AUTH_PASSWORD
     ) {
-      app.use(['/docs', '/docs-json'], (req, res, next) => {
+      app.use(['/v1/docs', '/v1/docs-json'], (req, res, next) => {
         const header = req.headers.authorization;
 
         if (!header || !header.startsWith('Basic ')) {
@@ -71,7 +71,7 @@ async function bootstrap() {
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('docs', app, document, {
+    SwaggerModule.setup('v1/docs', app, document, {
       swaggerOptions: { persistAuthorization: true }, // Persiste o token de autorização na UI
     });
   }
@@ -82,7 +82,7 @@ async function bootstrap() {
   // Mensagens de log condicionais
   if (enableSwagger) {
     logger.log(`🚀 API Gateway ouvindo na porta ${port}`);
-    logger.log(`📚 Swagger disponível em http://localhost:${port}/docs`);
+    logger.log(`📚 Swagger disponível em http://localhost:${port}/v1/docs`);
   } else {
     logger.log(`🚀 API Gateway ouvindo na porta ${port}`);
     logger.log('📚 Swagger desabilitado (ENABLE_SWAGGER=false)');
