@@ -1,12 +1,6 @@
+import { Body, Controller, Get, Headers, Post, Req, ValidationPipe } from '@nestjs/common';
 import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Logger,
-  ValidationPipe,
-} from '@nestjs/common';
-import {
+  ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
@@ -20,12 +14,14 @@ import { SpanishCardsDto } from './dto/spanish-cards.dto';
 import { LearningService } from './learning.service';
 import { CurriculumNextResponse } from '@cognilingua/shared';
 import { Public } from '../auth/decorators/public.decorator';
+import { Request } from 'express';
+
+type AuthRequest = Request & { user?: any };
 
 @ApiTags('Learning')
+@ApiBearerAuth()
 @Controller('learning')
 export class LearningController {
-  private readonly logger = new Logger(LearningController.name);
-
   constructor(private readonly learningService: LearningService) {}
 
   // 👉 Endpoint acessível pelo navegador (GET)
@@ -50,32 +46,16 @@ export class LearningController {
     };
   }
 
-  // Endpoint da primeira versão para listar módulos
   @Get('modules')
-  listModules() {
-    // A lógica original do LearningService.getModules() precisa ser reimplementada ou chamada via gRPC
-    // Exemplo (stub):
-    return [
-      {
-        id: 'basico-1',
-        title: 'Saudações e Apresentações',
-        prerequisites: [],
-        objectives: ['Cumprimentar', 'Se apresentar'],
-        completionCriteria: { minAccuracy: 0.8, minExercises: 8, minVocabulary: 6 },
-      },
-      {
-        id: 'basico-2',
-        title: 'Rotina e Números',
-        prerequisites: ['basico-1'],
-        objectives: ['Descrever rotina', 'Falar de horários'],
-        completionCriteria: { minAccuracy: 0.8, minExercises: 10, minVocabulary: 7 },
-      },
-      // ... outros módulos
-    ];
+  @ApiOperation({ summary: 'Lista módulos personalizados pelo content-brain' })
+  async listModules(@Req() req: AuthRequest, @Headers('x-correlation-id') correlationId?: string) {
+    const studentId = req.user?.sub || req.user?.id || 'anonymous';
+    return this.learningService.fetchModules(studentId, correlationId);
   }
 
-  // Endpoint da primeira versão para obter o próximo item
   @Post('next-item')
+  @ApiOperation({ summary: 'Solicita próximo item de estudo ao content-brain' })
+  @ApiOkResponse({ description: 'Contrato de próximo item retornado pelo content-brain' })
   getNextItem(
     @Body(
       new ValidationPipe({
@@ -85,34 +65,17 @@ export class LearningController {
       }),
     )
     payload: NextItemRequestDto,
+    @Req() req: AuthRequest,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
-    // A lógica original do LearningService.getNextItem() precisa ser reimplementada ou chamada via gRPC
-    // Exemplo (stub) - Esta lógica deve ser movida para o microsserviço adequado e chamada via gRPC
-    const { completedItemIds, accuracyPercent, exercisesCompleted } = payload;
-    // Simula decisão baseada no payload
-    const nextVocabularyItem = `vocab-item-${Date.now()}`; // Lógica real em outro serviço
-    const vocabularyMastered = Array.isArray(completedItemIds)
-      ? completedItemIds.length
-      : 0;
-    const progress = {
-      currentAccuracy: accuracyPercent ?? null,
-      exercisesCompleted: exercisesCompleted ?? 0,
-      vocabularyMastered,
-      nextSuggestedModule: 'basico-2', // Lógica real em outro serviço
-    };
-
-    return {
-      nextItem: nextVocabularyItem,
-      progress,
-    };
+    const studentId = req.user?.sub || payload.studentId;
+    return this.learningService.fetchNextItem({ ...payload, studentId }, correlationId);
   }
 
-  // 👉 Endpoint usado pelo webhook (POST) - Da segunda versão
   @Post('lesson-completed')
   @ApiOperation({
     summary: 'Webhook de conclusão de lição',
-    description:
-      'Recebe eventos de lições concluídas e repassa ao orquestrador (stub).',
+    description: 'Encaminha eventos para student-profiler e persiste telemetria.',
   })
   @ApiBody({
     type: LessonCompletedWebhookDto,
@@ -134,26 +97,18 @@ export class LearningController {
     schema: {
       example: {
         success: true,
-        message: 'Lesson completion recebida e processada (stub).',
+        message: 'Lesson completion recebida e processada.',
         processedAt: '2024-06-30T12:00:00.000Z',
+        correlationId: 'corr-123',
       },
     },
   })
   async handleLessonCompletedWebhook(
     @Body(new ValidationPipe({ transform: true }))
     payload: LessonCompletedWebhookDto,
-  ): Promise<{ success: boolean; message: string; processedAt: string }> {
-    this.logger.log(
-      {
-        studentId: payload.studentId,
-        lessonId: payload.lessonId,
-        score: payload.score,
-        timestamp: payload.timestamp,
-      },
-      '✅ Lesson completed webhook recebido',
-    );
-
-    const response = await this.learningService.forwardLessonCompleted(payload);
+    @Headers('x-correlation-id') correlationId?: string,
+  ): Promise<{ success: boolean; message: string; processedAt: string; correlationId: string }> {
+    const response = await this.learningService.processLessonCompleted(payload, correlationId);
 
     return {
       ...response,
@@ -161,33 +116,26 @@ export class LearningController {
     };
   }
 
-  // Endpoint da segunda versão para obter o próximo conteúdo do currículo
   @Post('curriculum/next')
+  @ApiOperation({ summary: 'Solicita próximo passo do currículo ao content-brain' })
   async getNextCurriculumStep(
     @Body(new ValidationPipe({ transform: true }))
     payload: CurriculumNextDto,
+    @Req() req: AuthRequest,
   ): Promise<CurriculumNextResponse> {
-    return this.learningService.forwardCurriculumRequest(payload);
+    const studentId = req.user?.sub || payload.studentId;
+    return this.learningService.forwardCurriculumRequest({ ...payload, studentId });
   }
 
-  // Endpoint da segunda versão para obter flashcards de espanhol
   @Post('spanish/cards')
+  @ApiOperation({ summary: 'Solicita flashcards para um conceito de espanhol' })
   async getSpanishCards(
     @Body(new ValidationPipe({ transform: true }))
     payload: SpanishCardsDto,
+    @Req() req: AuthRequest,
+    @Headers('x-correlation-id') correlationId?: string,
   ): Promise<{ conceptId: string; cards: Array<{ front: string; back: string }> }> {
-    // A lógica real deve estar no microsserviço content-brain e ser chamada via gRPC
-    // Exemplo (stub):
-    const limit = payload.limit ?? 10;
-
-    const cards = Array.from({ length: limit }).map((_, index) => ({
-      front: `Carta ${index + 1} para ${payload.conceptId}`,
-      back: `Tradução/explicação ${index + 1}`,
-    }));
-
-    return {
-      conceptId: payload.conceptId,
-      cards,
-    };
+    const studentId = req.user?.sub || payload.studentId;
+    return this.learningService.fetchSpanishCards({ ...payload, studentId }, correlationId);
   }
 }
