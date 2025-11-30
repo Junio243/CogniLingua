@@ -19,7 +19,10 @@ export async function generateMetadata({ params }: { params: { lessonId: string 
 
 async function fetchFlashcardsForLesson(lessonId: string): Promise<Flashcard[]> {
   try {
-    const { cards } = await getSpanishFlashcards({ studentId: 'demo-student', conceptId: lessonId, limit: 6 }, 'csr');
+   const { cards } = await getSpanishFlashcards(
+  { studentId: 'demo-student', conceptId: lessonId, limit: 6 },
+  { mode: 'csr' }
+);
     return cards?.length ? cards : getFallbackCards();
   } catch (error) {
     console.warn('[lesson-page] usando flashcards fallback:', error);
