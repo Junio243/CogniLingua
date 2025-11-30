@@ -3,16 +3,21 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { LearningService } from '../src/learning/learning.service';
+import * as jwt from 'jsonwebtoken';
+
+const buildAuthToken = () =>
+  jwt.sign({ sub: 'student-123', roles: ['student'] }, process.env.ACCESS_TOKEN_SECRET || 'cognilingua_access_secret');
 
 describe('LearningController (e2e)', () => {
   let app: INestApplication;
   const mockResponse = {
     success: true,
     message: 'Mock gRPC processed lesson',
+    correlationId: 'corr-mock',
   };
 
   const learningServiceMock = {
-    forwardLessonCompleted: jest.fn().mockResolvedValue(mockResponse),
+    processLessonCompleted: jest.fn().mockResolvedValue(mockResponse),
   } satisfies Partial<LearningService>;
 
   beforeAll(async () => {
@@ -35,18 +40,19 @@ describe('LearningController (e2e)', () => {
     const payload = {
       studentId: 'student-123',
       lessonId: 'lesson-789',
-      score: 95,
+      score: 0.95,
       timestamp: new Date().toISOString(),
     };
 
     await request(app.getHttpServer())
       .post('/learning/lesson-completed')
+      .set('Authorization', `Bearer ${buildAuthToken()}`)
       .send(payload)
       .expect(201)
       .expect(({ body }) => {
-        expect(body).toEqual(mockResponse);
+        expect(body).toMatchObject(mockResponse);
       });
 
-    expect(learningServiceMock.forwardLessonCompleted).toHaveBeenCalledWith(payload);
+    expect(learningServiceMock.processLessonCompleted).toHaveBeenCalledWith(payload, undefined);
   });
 });

@@ -1,35 +1,85 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
 import { CurriculumNextDto } from './dto/curriculum-next.dto';
 import { LessonCompletedWebhookDto } from './dto/lesson-completed-webhook.dto';
 import {
   CurriculumNextResponse,
   CurriculumSignal,
 } from '@cognilingua/shared';
+import { HttpService } from '@nestjs/axios';
+import { catchError, lastValueFrom, retry, timeout, timer } from 'rxjs';
+import { LessonEventEntity } from './entities/lesson-event.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { randomUUID } from 'node:crypto';
+import { NextItemRequestDto } from './dto/next-item-request.dto';
+import { SpanishCardsDto } from './dto/spanish-cards.dto';
+
+interface LessonAck {
+  correlationId?: string;
+  status?: string;
+  message?: string;
+}
 
 @Injectable()
 export class LearningService {
   private readonly logger = new Logger(LearningService.name);
+  private readonly studentProfilerUrl =
+    process.env.STUDENT_PROFILER_URL || 'http://student-profiler:3001';
+  private readonly contentBrainUrl =
+    process.env.CONTENT_BRAIN_URL || 'http://content-brain:3002';
+  private readonly httpTimeoutMs = Number(process.env.LEARNING_HTTP_TIMEOUT_MS ?? 5000);
+  private readonly retryCount = Number(process.env.LEARNING_HTTP_RETRY_COUNT ?? 2);
+  private readonly retryDelayMs = Number(process.env.LEARNING_HTTP_RETRY_DELAY_MS ?? 250);
+
+  constructor(
+    private readonly httpService: HttpService,
+    @InjectRepository(LessonEventEntity)
+    private readonly lessonEventsRepository: Repository<LessonEventEntity>,
+  ) {}
 
   /**
-   * Método mantido apenas para compatibilidade com testes.
-   * TODO: Remover após atualizar os testes para usar a nova arquitetura.
+   * Compatibilidade com testes antigos. Encaminha evento de lição concluída.
    */
   async forwardLessonCompleted(
     payload: LessonCompletedWebhookDto,
-  ): Promise<{ success: boolean; message: string }> {
+    correlationId?: string,
+  ): Promise<{ success: boolean; message: string; correlationId: string }> {
+    const response = await this.processLessonCompleted(payload, correlationId);
+    return { success: true, message: response.message, correlationId: response.correlationId };
+  }
+
+  async processLessonCompleted(
+    payload: LessonCompletedWebhookDto,
+    incomingCorrelationId?: string,
+  ): Promise<{ success: boolean; message: string; correlationId: string }> {
+    const correlationId = payload.correlationId || incomingCorrelationId || this.generateCorrelationId();
+    const preparedPayload = { ...payload, correlationId };
+
+    this.logger.log(
+      { correlationId, studentId: payload.studentId, lessonId: payload.lessonId },
+      '🔔 Recebendo lesson-completed para encaminhamento',
+    );
+
+    const studentProfilerResponse = await this.dispatchWithRetry<LessonAck>(
+      `${this.studentProfilerUrl}/lessons/completed`,
+      preparedPayload,
+      correlationId,
+      'student-profiler',
+    );
+
+    await this.persistLessonEvent(preparedPayload, studentProfilerResponse?.status);
+
     return {
       success: true,
-      message: `Lesson ${payload.lessonId} para aluno ${payload.studentId} encaminhada via gRPC (mock).`,
+      message:
+        studentProfilerResponse?.message ||
+        `Lesson ${payload.lessonId} encaminhada para student-profiler`,
+      correlationId,
     };
   }
 
-  /**
-   * Simula o encaminhamento gRPC para o student-profiler e content-brain.
-   * Inclui o novo campo cognitiveLoadOverride no payload encaminhado.
-   */
-  async forwardCurriculumRequest(
-    payload: CurriculumNextDto,
-  ): Promise<CurriculumNextResponse> {
+  async forwardCurriculumRequest(payload: CurriculumNextDto): Promise<CurriculumNextResponse> {
+    const correlationId = payload.correlationId || this.generateCorrelationId();
     const signal: CurriculumSignal = {
       studentId: payload.studentId,
       currentConceptId: payload.currentConceptId,
@@ -37,62 +87,130 @@ export class LearningService {
       cognitiveLoadOverride: payload.cognitiveLoadOverride,
       accuracyPercent: payload.accuracyPercent,
       exercisesCompleted: payload.exercisesCompleted,
-      correlationId: payload.correlationId ?? this.generateCorrelationId(),
+      correlationId,
       eventTimestamp: payload.eventTimestamp ?? Date.now(),
     };
 
-    // Stub gRPC: no ambiente atual apenas registramos a intenção de chamada.
-    this.logger.log(
-      {
-        ...signal,
-        target: 'student-profiler',
-      },
-      '📡 Encaminhando ajuste de carga cognitiva via gRPC',
+    await this.dispatchWithRetry<AckResponse>(
+      `${this.studentProfilerUrl}/learning/signals`,
+      signal,
+      correlationId,
+      'student-profiler',
     );
 
-    this.logger.log(
-      {
-        ...signal,
-        target: 'content-brain',
-      },
-      '📡 Requisitando próximo conceito via gRPC',
+    const response = await this.dispatchWithRetry<CurriculumNextResponse>(
+      `${this.contentBrainUrl}/curriculum/next`,
+      signal,
+      correlationId,
+      'content-brain',
     );
 
-    // Mantém a resposta stub original, mas agora incluindo o override no racional.
-    const nextConceptId = payload.currentConceptId
-      ? `${payload.currentConceptId}-next`
-      : 'concept-0001';
+    return response;
+  }
 
-    const rationaleSegments = ['Recomendação baseada em progresso recente (stub).'];
+  async fetchModules(studentId: string, correlationId?: string): Promise<any> {
+    const corr = correlationId || this.generateCorrelationId();
+    return this.dispatchWithRetry<any>(
+      `${this.contentBrainUrl}/modules`,
+      { studentId, correlationId: corr },
+      corr,
+      'content-brain',
+    );
+  }
 
-    if (typeof signal.cognitiveLoadOverride === 'number') {
-      rationaleSegments.push(
-        `Carga cognitiva sobrescrita para ${Number(signal.cognitiveLoadOverride) * 100}% enviada ao orquestrador gRPC.`,
+  async fetchNextItem(payload: NextItemRequestDto, correlationId?: string): Promise<NextItemResponse> {
+    const corr = correlationId || this.generateCorrelationId();
+    return this.dispatchWithRetry<NextItemResponse>(
+      `${this.contentBrainUrl}/items/next`,
+      { ...payload, correlationId: corr },
+      corr,
+      'content-brain',
+    );
+  }
+
+  async fetchSpanishCards(
+    payload: SpanishCardsDto,
+    correlationId?: string,
+  ): Promise<{ conceptId: string; cards: Array<{ front: string; back: string }> }> {
+    const corr = correlationId || this.generateCorrelationId();
+    return this.dispatchWithRetry<{ conceptId: string; cards: Array<{ front: string; back: string }> }>(
+      `${this.contentBrainUrl}/spanish/cards`,
+      { ...payload, correlationId: corr },
+      corr,
+      'content-brain',
+    );
+  }
+
+  private async dispatchWithRetry<T>(
+    url: string,
+    body: Record<string, any>,
+    correlationId: string,
+    target: string,
+  ): Promise<T> {
+    this.logger.log({ correlationId, target, url }, '🚀 Disparando requisição');
+    const request$ = this.httpService
+      .post<T>(url, body, {
+        headers: {
+          'x-correlation-id': correlationId,
+        },
+      })
+      .pipe(
+        timeout(this.httpTimeoutMs),
+        retry({
+          count: this.retryCount,
+          delay: (_error, retryCount) => timer(this.retryDelayMs * retryCount),
+        }),
+        catchError((error) => {
+          this.logger.error(
+            { correlationId, target, url, error: error?.message },
+            '❌ Falha ao comunicar com serviço dependente',
+          );
+          throw new BadGatewayException(
+            `Falha ao comunicar com ${target}: ${error?.response?.data?.message || error?.message}`,
+          );
+        }),
+      );
+
+    const response = await lastValueFrom(request$);
+    const data = (response as any)?.data ?? (response as any);
+    return data as T;
+  }
+
+  private async persistLessonEvent(
+    payload: LessonCompletedWebhookDto & { correlationId: string },
+    status?: string,
+  ) {
+    try {
+      const entity = this.lessonEventsRepository.create({
+        studentId: payload.studentId,
+        lessonId: payload.lessonId,
+        score: payload.score,
+        timestamp: payload.timestamp,
+        correlationId: payload.correlationId,
+        metadata: payload.metadata,
+        externalStatus: status,
+      });
+      await this.lessonEventsRepository.save(entity);
+    } catch (error) {
+      this.logger.error(
+        { correlationId: payload.correlationId, error: error?.message },
+        '⚠️ Falha ao persistir evento de lição concluída',
       );
     }
-
-    if (typeof signal.accuracyPercent === 'number') {
-      rationaleSegments.push(
-        `Acurácia recente reportada: ${Number(signal.accuracyPercent) * 100}% (corr ${signal.correlationId}).`,
-      );
-    }
-
-    return {
-      nextConceptId,
-      rationale: rationaleSegments.join(' '),
-      recommendedLoad:
-        typeof signal.cognitiveLoadOverride === 'number'
-          ? Number(signal.cognitiveLoadOverride)
-          : undefined,
-      projectedMastery:
-        typeof signal.mastery === 'number'
-          ? Math.min(1, Number(signal.mastery) + 0.05)
-          : undefined,
-      correlationId: signal.correlationId,
-    };
   }
 
   private generateCorrelationId(): string {
-    return `corr-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+    return randomUUID();
   }
+}
+
+interface AckResponse {
+  status?: string;
+  message?: string;
+  correlationId?: string;
+}
+
+interface NextItemResponse {
+  nextItem: string;
+  progress: Record<string, any>;
 }

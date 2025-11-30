@@ -87,11 +87,11 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(accessPayload, {
         secret: process.env.ACCESS_TOKEN_SECRET || 'cognilingua_access_secret',
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || '15m',
+        expiresIn: (process.env.ACCESS_TOKEN_EXPIRES_IN ?? '15m') as any,
       }),
       this.jwtService.signAsync(refreshPayload, {
         secret: process.env.REFRESH_TOKEN_SECRET || 'cognilingua_refresh_secret',
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
+        expiresIn: (process.env.REFRESH_TOKEN_EXPIRES_IN ?? '7d') as any,
       }),
     ]);
 
