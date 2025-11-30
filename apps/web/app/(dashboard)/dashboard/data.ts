@@ -1,99 +1,77 @@
-import { cache } from 'react';
-
 import type { Flashcard, Module } from '../../../types/learning';
 import {
   getModules,
   getNextItem,
   getSpanishFlashcards,
   type NextItemProgress,
-  type NextItemResponse,
 } from '../../../services/learningApi';
+import type { HttpClientOptions } from '../../../services/httpClient';
 
-const fallbackFlashcards: Flashcard[] = [
-  { front: '¿Cómo amaneciste?', back: 'Como você acordou?/Como está se sentindo hoje de manhã?' },
-  { front: 'Estoy repasando los verbos irregulares', back: 'Estou revisando os verbos irregulares.' },
-  { front: '¿Te parece si practicamos a las 19h?', back: 'Que tal praticarmos às 19h?' },
-  { front: 'Me quedé sin batería', back: 'Fiquei sem bateria (do celular).' },
-];
-
-const fallbackProgress: NextItemProgress = {
-  currentAccuracy: 0.82,
-  exercisesCompleted: 16,
-  vocabularyMastered: 22,
-  nextSuggestedModule: 'basico-2',
+export type DashboardData = {
+  modules: Module[];
+  activeModule?: Module;
+  flashcards: Flashcard[];
+  nextItem: { title: string; moduleId?: string; description: string };
+  progress: {
+    accuracy: number;
+    exercisesCompleted: number;
+    vocabularyMastered: number;
+    nextSuggestedModule: string;
+    streak: number;
+    weeklyMinutes: number;
+  };
 };
 
-async function fetchFlashcards(studentId: string, conceptId: string): Promise<Flashcard[]> {
-  try {
-    const { cards } = await getSpanishFlashcards({ studentId, conceptId, limit: 6 });
-    return cards?.length ? cards : fallbackFlashcards;
-  } catch (error) {
-    console.error('[dashboard] fallback flashcards used:', error);
-    return fallbackFlashcards;
-  }
-}
-
-async function fetchNextItemSummary(payload: {
+type DashboardFetcherParams = {
   studentId: string;
-  moduleId?: string;
-  exercisesCompleted: number;
-  accuracyPercent: number;
-}): Promise<NextItemResponse | { nextItem: string; progress: NextItemProgress }> {
-  try {
-    return await getNextItem(payload, 'csr');
-  } catch (error) {
-    console.warn('[dashboard] fallback next item used:', error);
-    return {
-      nextItem: 'Diálogo guiado sobre rotina',
-      progress: fallbackProgress,
-    };
-  }
-}
+  httpOptions?: HttpClientOptions;
+};
 
-export const fetchDashboardData = cache(async () => {
-  const modules = await getModules();
+export async function fetchDashboardData({
+  studentId,
+  httpOptions,
+}: DashboardFetcherParams): Promise<DashboardData> {
+  const requestOptions: HttpClientOptions = {
+    mode: 'csr',
+    ...httpOptions,
+  };
+
+  const modules = await getModules(requestOptions);
   const activeModule = modules[0];
-  const studentId = 'demo-student';
 
-  const nextItemResult = await fetchNextItemSummary({
-    studentId,
-    moduleId: activeModule?.id,
-    exercisesCompleted: 12,
-    accuracyPercent: (fallbackProgress.currentAccuracy ?? 0.8) * 100,
-  });
+  const nextItemResult = await getNextItem(
+    {
+      studentId,
+      moduleId: activeModule?.id,
+      exercisesCompleted: 12,
+      accuracyPercent: 80,
+    },
+    requestOptions,
+  );
 
-  const flashcards = await fetchFlashcards(studentId, activeModule?.id ?? 'basico-1');
+  const flashcardsResponse = await getSpanishFlashcards(
+    { studentId, conceptId: activeModule?.id ?? 'concept', limit: 6 },
+    requestOptions,
+  );
+
+  const progress: NextItemProgress = nextItemResult.progress;
 
   return {
     modules,
     activeModule,
-    flashcards,
+    flashcards: flashcardsResponse.cards ?? [],
     nextItem: {
       title: nextItemResult.nextItem,
       moduleId: activeModule?.id,
-      description:
-        'Gerado pelo cognitive-analyzer com base no histórico recente e aderência ao módulo ativo.',
+      description: 'Recomendação calculada via gateway autenticado.',
     },
     progress: {
-      accuracy: Math.round((nextItemResult.progress.currentAccuracy ?? 0.82) * 100),
-      exercisesCompleted: nextItemResult.progress.exercisesCompleted ?? 0,
-      vocabularyMastered: nextItemResult.progress.vocabularyMastered ?? 0,
-      nextSuggestedModule: nextItemResult.progress.nextSuggestedModule ?? activeModule?.id ?? 'basico-1',
-      streak: 6,
-      weeklyMinutes: 115,
+      accuracy: Math.round((progress.currentAccuracy ?? 0) * 100),
+      exercisesCompleted: progress.exercisesCompleted ?? 0,
+      vocabularyMastered: progress.vocabularyMastered ?? 0,
+      nextSuggestedModule: progress.nextSuggestedModule ?? activeModule?.id ?? 'n/d',
+      streak: 0,
+      weeklyMinutes: 0,
     },
-  } satisfies {
-    modules: Module[];
-    activeModule?: Module;
-    flashcards: Flashcard[];
-    nextItem: { title: string; moduleId?: string; description: string };
-    progress: {
-      accuracy: number;
-      exercisesCompleted: number;
-      vocabularyMastered: number;
-      nextSuggestedModule: string;
-      streak: number;
-      weeklyMinutes: number;
-    };
-  };
-});
+  } satisfies DashboardData;
+}

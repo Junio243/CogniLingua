@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import { requireServerSession } from '../../lib/auth/session';
 
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -47,7 +48,9 @@ function QueryClientProviderSlot({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default async function DashboardLayout({ children }: DashboardLayoutProps) {
+  await requireServerSession();
+
   return (
     <ThemeProviderSlot>
       <LanguageProviderSlot>

@@ -5,7 +5,7 @@ import { Badge } from '../../../../components/ui/badge';
 import { Button } from '../../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../../components/ui/card';
 import type { LearningModule } from './data';
-import { fetchModulesCached as fetchModules } from './data';
+import { fetchModules } from './data';
 
 export async function generateMetadata(): Promise<Metadata> {
   const modules = await fetchModules();

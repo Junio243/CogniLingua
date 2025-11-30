@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { cookies, headers } from 'next/headers';
 import './globals.css';
 import { Providers, type Locale, type Theme } from './providers';
+import { getServerSession } from '../lib/auth/session';
 
 export const metadata: Metadata = {
   title: 'CogniLingua | Espanhol sob medida',
@@ -56,11 +57,17 @@ export default async function RootLayout({
 }) {
   const locale = await resolveLocale();
   const theme = await resolveTheme();
+  const initialSession = await getServerSession();
 
   return (
     <html lang={locale} data-theme={theme} suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased">
-        <Providers locale={locale} fallbackLocale={FALLBACK_LOCALE} theme={theme}>
+        <Providers
+          locale={locale}
+          fallbackLocale={FALLBACK_LOCALE}
+          theme={theme}
+          initialSession={initialSession}
+        >
           {children}
         </Providers>
       </body>

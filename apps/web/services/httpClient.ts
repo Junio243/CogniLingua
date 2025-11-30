@@ -13,6 +13,16 @@ export type FetchMode = 'ssr' | 'csr';
 export type HttpRequestOptions = Omit<RequestInit, 'mode'> & {
   mode?: FetchMode;
   query?: Record<string, string | number | boolean | undefined>;
+  /**
+   * Bearer token forwarded to the API gateway.
+   * When provided, an Authorization header will be appended to the request.
+   */
+  authToken?: string;
+  /**
+   * Whether cookies/session data should be forwarded automatically.
+   * Enabled by default to support authenticated gateway routes.
+   */
+  withCredentials?: boolean;
 };
 
 function buildUrl(path: string, query?: HttpRequestOptions['query']): string {
@@ -50,14 +60,16 @@ function mergeHeaders(customHeaders?: HeadersInit): HeadersInit {
 }
 
 function normalizeOptions(options: HttpRequestOptions = {}): HttpRequestOptions {
-  const { mode = 'ssr', headers, ...rest } = options;
+  const { mode = 'ssr', headers, authToken, withCredentials = true, ...rest } = options;
   // Usar ISR no SSR para evitar fetch no-store durante o build
   const cacheConfig: any = mode === 'ssr' ? { next: { revalidate: 60 } } : {};
+  const authHeaders = authToken ? { Authorization: `Bearer ${authToken}` } : undefined;
 
   return {
     ...cacheConfig,
     ...rest,
-    headers: mergeHeaders(headers),
+    credentials: withCredentials ? 'include' : rest.credentials,
+    headers: mergeHeaders({ ...authHeaders, ...headers }),
   };
 }
 
