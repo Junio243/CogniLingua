@@ -19,6 +19,7 @@ import { NextItemRequestDto } from './dto/next-item-request.dto';
 import { SpanishCardsDto } from './dto/spanish-cards.dto';
 import { LearningService } from './learning.service';
 import { CurriculumNextResponse } from '@cognilingua/shared';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('Learning')
 @Controller('learning')
@@ -28,6 +29,7 @@ export class LearningController {
   constructor(private readonly learningService: LearningService) {}
 
   // 👉 Endpoint acessível pelo navegador (GET)
+  @Public()
   @Get('status')
   @ApiOperation({ summary: 'Health-check do gateway' })
   @ApiOkResponse({
