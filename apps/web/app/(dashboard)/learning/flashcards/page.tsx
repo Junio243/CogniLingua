@@ -14,20 +14,19 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
- async function fetchDailyCards(): Promise<Flashcard[]> {
-   try {
--    const { cards } = await getSpanishFlashcards({ studentId: 'demo-student', conceptId: 'basico-1', limit: 8 }, 'csr');
-+    const { cards } = await getSpanishFlashcards(
-+      { studentId: 'demo-student', conceptId: 'basico-1', limit: 8 },
-+      { mode: 'csr' }, // passa um objeto de opções em vez de uma string literal
-+    );
-     return cards?.length ? cards : getFallbackCards();
-   } catch (error) {
-     console.error('[flashcards] fallback cards used:', error);
-     return getFallbackCards();
-   }
- }
+async function fetchDailyCards(): Promise<Flashcard[]> {
+  try {
+    const { cards } = await getSpanishFlashcards(
+      { studentId: 'demo-student', conceptId: 'basico-1', limit: 8 },
+      { mode: 'csr' }
+    );
 
+    return cards?.length ? cards : getFallbackCards();
+  } catch (error) {
+    console.error('[flashcards] fallback cards used:', error);
+    return getFallbackCards();
+  }
+}
 
 export default async function FlashcardsPage() {
   const cards = await fetchDailyCards();
