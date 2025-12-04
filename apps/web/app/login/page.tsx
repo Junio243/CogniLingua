@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 
 export default function LoginPage({ searchParams }: { searchParams: { redirectTo?: string } }) {
   const redirectTo = searchParams?.redirectTo ?? '/dashboard';
+  const loginHref = { pathname: '/api/auth/login', query: { redirectTo } } as const;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl items-center justify-center px-6 py-12">
@@ -23,7 +24,7 @@ export default function LoginPage({ searchParams }: { searchParams: { redirectTo
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Button asChild>
-            <Link href={`/api/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`}>Entrar com sua conta</Link>
+            <Link href={loginHref}>Entrar com sua conta</Link>
           </Button>
           <p className="text-sm text-slate-400">
             Caso já tenha feito login em outra aba, atualize a página para reutilizar o token JWT presente no cookie.
