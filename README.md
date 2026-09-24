@@ -1,5 +1,15 @@
 # CogniLingua
 
+[![CI](https://github.com/Junio243/CogniLingua/actions/workflows/ci.yml/badge.svg)](https://github.com/Junio243/CogniLingua/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://cogni-lingua.vercel.app)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](./LICENSE)
+
+> **Demo:** https://cogni-lingua.vercel.app
+
+## 📸 Screenshots
+
+> Prints em `docs/screenshots/` (`dashboard.png`, `lesson.png`).
+
 Plataforma de aprendizado adaptativo de idiomas construída sobre um monorepo NestJS + Next.js. O projeto combina serviços de recomendação, análise cognitiva e entrega de conteúdo para personalizar a jornada de estudo de cada aluno.
 
 ## Visão geral

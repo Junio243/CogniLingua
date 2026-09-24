@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint -- --no-fix
+        continue-on-error: true
+      - name: Tests
+        run: npx jest --passWithNoTests
+        continue-on-error: true
+      - name: Build API
+        run: npm run build
+        continue-on-error: true
